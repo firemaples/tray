@@ -1,17 +1,20 @@
 apply plugin: 'com.android.library'
 apply plugin: 'jacoco'
 // apply plugin: 'bintray-release'
+apply plugin: 'maven-publish'
 
 def final String VERSION_NAME = "0.9.2"
 def final int VERSION_CODE = 5
+def final String GROUP_ID = "com.firemaples"
+def final String ARTIFACT_ID = "tray"
 
 android {
-    compileSdkVersion 22
-    buildToolsVersion "21.1.2"
+    compileSdkVersion 30
+    buildToolsVersion "30.0.0"
 
     defaultConfig {
         minSdkVersion 15
-        targetSdkVersion 22
+        targetSdkVersion 30
         versionCode VERSION_CODE
         versionName VERSION_NAME
 
@@ -37,6 +40,15 @@ android {
     lintOptions {
         abortOnError false
     }
+
+    android.libraryVariants.all { variant ->
+        variant.outputs.all { output ->
+            if (outputFile != null && outputFileName.endsWith('.aar')) {
+//                outputFileName = "${archivesBaseName}-${variant.name}-${defaultConfig.versionName}.aar"
+                outputFileName = "${ARTIFACT_ID}-${variant.name}.aar"
+            }
+        }
+    }
 }
 
 dependencies {
@@ -59,3 +71,44 @@ dependencies {
 //     description = 'Tray - a SharedPreferences replacement for Android'
 //     website = 'https://github.com/grandcentrix/tray'
 // }
+
+def githubProperties = new Properties()
+githubProperties.load(new FileInputStream(rootProject.file("github.properties"))) //Set env variable GPR_USER & GPR_API_KEY if not adding a properties file
+
+def getVersionName = { ->
+    return VERSION_NAME // Replace with version Name
+}
+
+def getArtificatId = { ->
+    return ARTIFACT_ID // Replace with library name ID
+}
+
+publishing {
+    publications {
+        bar(MavenPublication) {
+            groupId GROUP_ID // Replace with group ID
+            artifactId getArtificatId()
+            version getVersionName()
+            artifact("$buildDir/outputs/aar/${getArtificatId()}-release.aar")
+        }
+    }
+
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            /** Configure path of your package repository on Github
+             ** Replace GITHUB_USERID with your/organisation Github userID
+             ** and REPOSITORY with the repository name on GitHub
+             */
+            url = uri("https://maven.pkg.github.com/firemaples/tray")
+            credentials {
+                /** Create github.properties in root project folder file with
+                 ** gpr.usr=GITHUB_USER_ID & gpr.key=PERSONAL_ACCESS_TOKEN
+                 ** Set env variable GPR_USER & GPR_API_KEY if not adding a properties file**/
+
+                username = githubProperties['gpr.usr'] ?: System.getenv("GPR_USER")
+                password = githubProperties['gpr.key'] ?: System.getenv("GPR_API_KEY")
+            }
+        }
+    }
+}
