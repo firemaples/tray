@@ -1,17 +1,20 @@
 apply plugin: 'com.android.library'
 apply plugin: 'jacoco'
 // apply plugin: 'bintray-release'
+apply plugin: 'maven-publish'
 
+def final String GROUP_ID = 'net.grandcentrix.tray'
+def final String ARTIFACT_ID = 'tray'
 def final String VERSION_NAME = "0.9.2"
 def final int VERSION_CODE = 5
 
 android {
-    compileSdkVersion 22
-    buildToolsVersion "21.1.2"
+    compileSdkVersion 30
+    buildToolsVersion "30.0.0"
 
     defaultConfig {
         minSdkVersion 15
-        targetSdkVersion 22
+        targetSdkVersion 30
         versionCode VERSION_CODE
         versionName VERSION_NAME
 
@@ -59,3 +62,41 @@ dependencies {
 //     description = 'Tray - a SharedPreferences replacement for Android'
 //     website = 'https://github.com/grandcentrix/tray'
 // }
+
+// usage:
+// ./gradlew clean publish
+// Because the components are created only during the afterEvaluate phase, you must
+// configure your publications using the afterEvaluate() lifecycle method.
+afterEvaluate {
+    publishing {
+        repositories {
+            maven {
+                // change to point to your repo, e.g. http://my.org/repo
+//                url = layout.buildDirectory.dir('repo')
+                println("Publish to file:${System.getenv('CUSTOM_LOCAL_MAVEN')}")
+                url = "file:${System.getenv('CUSTOM_LOCAL_MAVEN')}"
+            }
+        }
+        publications {
+            // Creates a Maven publication called "release".
+            release(MavenPublication) {
+                // Applies the component for the release build variant.
+                from components.release
+
+                // You can then customize attributes of the publication as shown below.
+                groupId = GROUP_ID
+                artifactId = ARTIFACT_ID
+                version = VERSION_NAME
+            }
+//            // Creates a Maven publication called “debug”.
+//            debug(MavenPublication) {
+//                // Applies the component for the debug build variant.
+//                from components.debug
+//
+//                groupId = 'com.example.MyLibrary'
+//                artifactId = 'final-debug'
+//                version = '1.0'
+//            }
+        }
+    }
+}
